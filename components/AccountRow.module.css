@@ -1,6 +1,7 @@
+/* ── Desktop layout ─────────────────────────────────────────── */
 .row {
   display: grid;
-  grid-template-columns: minmax(200px, 1.2fr) repeat(8, minmax(100px, 1fr)) 130px;
+  grid-template-columns: minmax(180px, 1.2fr) repeat(7, minmax(95px, 1fr)) 120px;
   align-items: center;
   gap: 10px;
   padding: 14px 20px;
@@ -8,11 +9,9 @@
   background: var(--bg-row);
   transition: background 120ms ease;
 }
+.row:hover { background: var(--bg-row-hover); }
 
-.row:hover {
-  background: var(--bg-row-hover);
-}
-
+/* ── Identity cell ──────────────────────────────────────────── */
 .identity {
   display: flex;
   align-items: center;
@@ -21,158 +20,123 @@
 }
 
 .statusDot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  flex-shrink: 0;
+  width: 7px; height: 7px;
+  border-radius: 50%; flex-shrink: 0;
   transition: background 200ms ease, box-shadow 200ms ease;
 }
-.statusDot[data-state='live'] {
-  background: var(--positive);
-  box-shadow: 0 0 8px rgba(94, 234, 212, 0.6);
-}
-.statusDot[data-state='stale'] {
-  background: var(--warning);
-}
-.statusDot[data-state='loading'] {
-  background: var(--text-faint);
-  animation: pulse 1.2s ease-in-out infinite;
-}
-.statusDot[data-state='error'] {
-  background: var(--danger);
-}
+.statusDot[data-state='live']    { background: var(--positive); box-shadow: 0 0 8px rgba(94,234,212,.6); }
+.statusDot[data-state='stale']   { background: var(--warning); }
+.statusDot[data-state='loading'] { background: var(--text-faint); animation: pulse 1.2s ease-in-out infinite; }
+.statusDot[data-state='error']   { background: var(--danger); }
 
-@keyframes pulse {
-  0%, 100% { opacity: 0.4; }
-  50% { opacity: 1; }
-}
+@keyframes pulse { 0%,100% { opacity:.4; } 50% { opacity:1; } }
 
-.labelGroup {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 0;
-}
+.labelGroup { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 
 .label {
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--text);
-  text-align: left;
-  padding: 0;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  font-size: 14px; font-weight: 500; color: var(--text);
+  text-align: left; padding: 0;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-.label:hover {
-  color: var(--accent);
-}
+.label:hover { color: var(--accent); }
 
 .labelInput {
-  background: var(--bg);
-  border: 1px solid var(--accent);
-  color: var(--text);
-  padding: 2px 6px;
-  font-size: 14px;
-  font-weight: 500;
-  border-radius: 3px;
-  outline: none;
-  width: 100%;
+  background: var(--bg); border: 1px solid var(--accent);
+  color: var(--text); padding: 2px 6px;
+  font-size: 14px; font-weight: 500; border-radius: 3px; outline: none; width: 100%;
 }
 
-.address {
-  font-size: 11px;
-  color: var(--text-faint);
-  letter-spacing: 0;
-  transition: color 120ms ease;
-}
-.address:hover {
-  color: var(--accent);
-}
+.address { font-size: 11px; color: var(--text-faint); letter-spacing: 0; transition: color 120ms ease; }
+.address:hover { color: var(--accent); }
 
+/* ── Data cells ─────────────────────────────────────────────── */
 .cell {
-  font-size: 14px;
-  text-align: right;
-  font-variant-numeric: tabular-nums;
-  color: var(--text);
+  font-size: 14px; text-align: right;
+  font-variant-numeric: tabular-nums; color: var(--text);
 }
-.cell[data-dim] { color: var(--text-dim); }
-.cell[data-accent] { color: var(--accent); }
-.cell[data-zero] { color: var(--text-faint); }
-.cell[data-highlight] {
-  color: var(--accent);
-  font-weight: 500;
-}
+.cell[data-dim]       { color: var(--text-dim); }
+.cell[data-accent]    { color: var(--accent); }
+.cell[data-zero]      { color: var(--text-faint); }
+.cell[data-highlight] { color: var(--accent); font-weight: 500; }
 
 .sharesCell {
   color: var(--text-dim);
-  display: flex;
-  align-items: baseline;
-  justify-content: flex-end;
-  gap: 3px;
+  display: flex; align-items: baseline; justify-content: flex-end; gap: 3px;
 }
-.sharesCell[data-highlight] { color: #a78bfa; } /* violet pour différencier du vert USDC */
-.sharesCell[data-zero] { color: var(--text-faint); }
+.sharesCell[data-highlight] { color: #a78bfa; }
+.sharesCell[data-zero]      { color: var(--text-faint); }
 
 .sharesUnit {
-  font-size: 9px;
-  color: var(--text-faint);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
+  font-size: 9px; color: var(--text-faint);
+  text-transform: uppercase; letter-spacing: .06em;
 }
 
-.skeleton {
-  color: var(--text-faint);
-  opacity: 0.5;
-}
+.skeleton { color: var(--text-faint); opacity: .5; }
 
-.actions {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 8px;
-}
+/* ── Actions ────────────────────────────────────────────────── */
+.actions { display: flex; align-items: center; justify-content: flex-end; gap: 8px; }
 
 .meta {
-  font-size: 11px;
-  color: var(--text-faint);
-  font-family: 'JetBrains Mono', monospace;
-  white-space: nowrap;
+  font-size: 11px; color: var(--text-faint);
+  font-family: 'JetBrains Mono', monospace; white-space: nowrap;
 }
 
 .iconBtn {
-  width: 24px;
-  height: 24px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 4px;
-  color: var(--text-faint);
-  font-size: 14px;
+  width: 28px; height: 28px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 4px; color: var(--text-faint); font-size: 16px;
   transition: all 120ms ease;
 }
-.iconBtn:hover {
-  background: var(--border-strong);
-  color: var(--text);
-}
+.iconBtn:hover { background: var(--border-strong); color: var(--text); }
 
-@media (max-width: 1100px) {
+/* ── Mobile layout (≤ 768px) ─────────────────────────────────── */
+@media (max-width: 768px) {
   .row {
-    grid-template-columns: 1fr;
-    gap: 8px;
-    padding: 16px;
-  }
-  .cell {
-    text-align: left;
     display: flex;
+    flex-direction: column;
+    gap: 0;
+    padding: 0;
+  }
+
+  /* Header of the card: identity + actions on same row */
+  .identity {
+    padding: 14px 16px 10px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .actions {
+    padding: 10px 16px;
+    border-top: 1px solid var(--border);
     justify-content: space-between;
   }
+
+  /* Each data cell becomes a label : value row */
+  .cell {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    text-align: right;
+    padding: 9px 16px;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+  }
+  .cell:last-of-type { border-bottom: none; }
+
+  /* Label shown on the left from data-label attribute */
   .cell::before {
     content: attr(data-label);
     color: var(--text-faint);
-    font-family: 'Inter Tight', sans-serif;
-    font-size: 11px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
     text-transform: uppercase;
-    letter-spacing: 0.08em;
+    letter-spacing: .08em;
+    font-weight: 400;
+    flex-shrink: 0;
+    margin-right: 12px;
+  }
+
+  /* Shares cell needs a different inner layout on mobile */
+  .sharesCell {
+    justify-content: flex-end;
   }
 }

@@ -131,7 +131,6 @@ export default function DashboardPage() {
 
       <section className={styles.totalsBar}>
         <Total label="total balance" value={totals.totalBalance} loading={isLoading} />
-        <Total label="free usdc" value={totals.usdcBalance} loading={isLoading} dim />
         <Total label="vol $ · all-time" value={totals.volumeUsdcTotal} loading={isLoading} compact />
         <Total label="vol $ · 24h" value={totals.volumeUsdc24h} loading={isLoading} highlight />
         <TotalShares label="vol shares · all-time" value={totals.volumeSharesTotal} loading={isLoading} />
@@ -144,7 +143,6 @@ export default function DashboardPage() {
         <div className={styles.tableHeader}>
           <div>account</div>
           <div className={styles.rightAlign}>total bal.</div>
-          <div className={styles.rightAlign}>free usdc</div>
           <div className={styles.rightAlign}>vol $ · all</div>
           <div className={styles.rightAlign}>vol $ · 24h</div>
           <div className={styles.rightAlign}>vol sh · all</div>
