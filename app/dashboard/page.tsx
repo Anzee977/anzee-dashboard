@@ -4,99 +4,68 @@ import { useEffect, useMemo, useState } from 'react';
 import useSWR from 'swr';
 import AccountRow from '@/components/AccountRow';
 import type { AccountSnapshot } from '@/lib/polymarket';
-import { formatUsd, formatShares } from '@/lib/format';
+import { formatUsd, formatShares, formatPct } from '@/lib/format';
 import styles from './page.module.css';
 
-interface AccountConfig {
-  address: string;
-  label: string;
-  addedAt: number;
-}
+interface AccountConfig { address: string; label: string; addedAt: number; }
 
 const STORAGE_KEY = 'anzee:accounts:v1';
 const REFRESH_KEY = 'anzee:refresh:v1';
 const ADDRESS_REGEX = /^0x[a-fA-F0-9]{40}$/;
 
 const REFRESH_OPTIONS = [
-  { value: 0, label: 'manual' },
-  { value: 30_000, label: '30s' },
-  { value: 60_000, label: '1m' },
-  { value: 300_000, label: '5m' },
+  { value: 0,       label: 'manual' },
+  { value: 30_000,  label: '30s'    },
+  { value: 60_000,  label: '1m'     },
+  { value: 300_000, label: '5m'     },
 ];
 
-const fetcher = (url: string) =>
-  fetch(url).then((r) => r.json() as Promise<AccountSnapshot>);
+const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
 export default function DashboardPage() {
-  const [accounts, setAccounts] = useState<AccountConfig[]>([]);
+  const [accounts, setAccounts]   = useState<AccountConfig[]>([]);
   const [refreshMs, setRefreshMs] = useState<number>(60_000);
-  const [draft, setDraft] = useState('');
+  const [draft, setDraft]         = useState('');
   const [draftLabel, setDraftLabel] = useState('');
-  const [hydrated, setHydrated] = useState(false);
+  const [hydrated, setHydrated]   = useState(false);
 
-  // Hydrate from localStorage
   useEffect(() => {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (raw) setAccounts(JSON.parse(raw));
       const ref = localStorage.getItem(REFRESH_KEY);
       if (ref) setRefreshMs(Number(ref));
-    } catch {
-      /* ignore */
-    }
+    } catch { /* ignore */ }
     setHydrated(true);
   }, []);
 
-  // Persist
-  useEffect(() => {
-    if (!hydrated) return;
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(accounts));
-  }, [accounts, hydrated]);
-
-  useEffect(() => {
-    if (!hydrated) return;
-    localStorage.setItem(REFRESH_KEY, String(refreshMs));
-  }, [refreshMs, hydrated]);
+  useEffect(() => { if (hydrated) localStorage.setItem(STORAGE_KEY, JSON.stringify(accounts)); }, [accounts, hydrated]);
+  useEffect(() => { if (hydrated) localStorage.setItem(REFRESH_KEY, String(refreshMs)); }, [refreshMs, hydrated]);
 
   const addAccount = () => {
     const addr = draft.trim().toLowerCase();
-    if (!ADDRESS_REGEX.test(addr)) {
-      alert('Invalid address. Must be a 0x-prefixed 40-char hex string.');
-      return;
-    }
-    if (accounts.some((a) => a.address === addr)) {
-      alert('Address already tracked.');
-      return;
-    }
-    setAccounts((prev) => [
-      ...prev,
-      {
-        address: addr,
-        label: draftLabel.trim() || `account ${prev.length + 1}`,
-        addedAt: Date.now(),
-      },
-    ]);
-    setDraft('');
-    setDraftLabel('');
+    if (!ADDRESS_REGEX.test(addr)) { alert('Invalid address.'); return; }
+    if (accounts.some((a) => a.address === addr)) { alert('Already tracked.'); return; }
+    setAccounts((prev) => [...prev, { address: addr, label: draftLabel.trim() || `account ${prev.length + 1}`, addedAt: Date.now() }]);
+    setDraft(''); setDraftLabel('');
   };
 
-  const removeAccount = (address: string) =>
-    setAccounts((prev) => prev.filter((a) => a.address !== address));
+  const removeAccount = (address: string) => setAccounts((prev) => prev.filter((a) => a.address !== address));
+  const renameAccount = (address: string, label: string) => setAccounts((prev) => prev.map((a) => a.address === address ? { ...a, label } : a));
 
-  const renameAccount = (address: string, label: string) =>
-    setAccounts((prev) =>
-      prev.map((a) => (a.address === address ? { ...a, label } : a))
-    );
+  const { totals, isLoading } = useTotals(accounts.map((a) => a.address), refreshMs);
 
-  // Aggregate totals across all accounts
-  const { totals, isLoading } = useTotals(
-    accounts.map((a) => a.address),
-    refreshMs
+  // Platform 24h volume — refreshed every 5 min independently
+  const { data: platformData } = useSWR<{ volume24h: number }>(
+    '/api/platform',
+    fetcher,
+    { refreshInterval: 300_000, revalidateOnFocus: false }
   );
+  const platformVolume24h = platformData?.volume24h ?? 0;
+  const combinedMarketShare = (platformVolume24h > 0 && totals.volumeUsdc24h > 0)
+    ? totals.volumeUsdc24h / platformVolume24h : undefined;
 
-  if (!hydrated) {
-    return <div className={styles.shell}><div className={styles.boot}>booting…</div></div>;
-  }
+  if (!hydrated) return <div className={styles.shell}><div className={styles.boot}>booting…</div></div>;
 
   return (
     <div className={styles.shell}>
@@ -109,18 +78,14 @@ export default function DashboardPage() {
           </h1>
           <div className={styles.tagline}>multi-account farming dashboard</div>
         </div>
-
         <div className={styles.controls}>
           <div className={styles.refreshGroup}>
             <span className={styles.refreshLabel}>refresh</span>
             <div className={styles.refreshButtons}>
               {REFRESH_OPTIONS.map((opt) => (
-                <button
-                  key={opt.value}
-                  className={styles.refreshBtn}
+                <button key={opt.value} className={styles.refreshBtn}
                   data-active={refreshMs === opt.value ? '' : undefined}
-                  onClick={() => setRefreshMs(opt.value)}
-                >
+                  onClick={() => setRefreshMs(opt.value)}>
                   {opt.label}
                 </button>
               ))}
@@ -130,13 +95,13 @@ export default function DashboardPage() {
       </header>
 
       <section className={styles.totalsBar}>
-        <Total label="total balance" value={totals.totalBalance} loading={isLoading} />
-        <Total label="vol $ · all-time" value={totals.volumeUsdcTotal} loading={isLoading} compact />
-        <Total label="vol $ · 24h" value={totals.volumeUsdc24h} loading={isLoading} highlight />
-        <TotalShares label="vol shares · all-time" value={totals.volumeSharesTotal} loading={isLoading} />
-        <TotalShares label="vol shares · 24h" value={totals.volumeShares24h} loading={isLoading} highlight />
-        <Total label="lp rewards · all-time" value={totals.rewardsTotal} loading={isLoading} accent />
-        <Total label="lp rewards · 24h" value={totals.rewards24h} loading={isLoading} accent highlight />
+        <Total label="total balance"       value={totals.totalBalance}    loading={isLoading} />
+        <Total label="vol $ · all-time"    value={totals.volumeUsdcTotal} loading={isLoading} compact />
+        <Total label="vol $ · 24h"         value={totals.volumeUsdc24h}   loading={isLoading} highlight />
+        <Total label="vol $ · 1h"          value={totals.volumeUsdc1h}    loading={isLoading} highlight />
+        <TotalPct label="mkt share · 24h"  value={combinedMarketShare}    loading={isLoading} />
+        <Total label="lp rewards · all"    value={totals.rewardsTotal}    loading={isLoading} accent />
+        <Total label="lp rewards · 24h"    value={totals.rewards24h}      loading={isLoading} accent highlight />
       </section>
 
       <section className={styles.table}>
@@ -145,8 +110,10 @@ export default function DashboardPage() {
           <div className={styles.rightAlign}>total bal.</div>
           <div className={styles.rightAlign}>vol $ · all</div>
           <div className={styles.rightAlign}>vol $ · 24h</div>
-          <div className={styles.rightAlign}>vol sh · all</div>
+          <div className={styles.rightAlign}>vol $ · 1h</div>
           <div className={styles.rightAlign}>vol sh · 24h</div>
+          <div className={styles.rightAlign}>vol sh · 1h</div>
+          <div className={styles.rightAlign}>mkt share</div>
           <div className={styles.rightAlign}>rewards · all</div>
           <div className={styles.rightAlign}>rewards · 24h</div>
           <div className={styles.rightAlign}>updated</div>
@@ -155,9 +122,7 @@ export default function DashboardPage() {
         {accounts.length === 0 ? (
           <div className={styles.empty}>
             <div className={styles.emptyTitle}>no accounts yet</div>
-            <div className={styles.emptyHint}>
-              add a funder address below to start tracking
-            </div>
+            <div className={styles.emptyHint}>add a funder address below to start tracking</div>
           </div>
         ) : (
           accounts.map((acc) => (
@@ -166,6 +131,7 @@ export default function DashboardPage() {
               address={acc.address}
               label={acc.label}
               refreshInterval={refreshMs || 999_999_999}
+              platformVolume24h={platformVolume24h}
               onRemove={() => removeAccount(acc.address)}
               onRename={(label) => renameAccount(acc.address, label)}
             />
@@ -176,102 +142,66 @@ export default function DashboardPage() {
       <section className={styles.addPanel}>
         <div className={styles.addPanelTitle}>+ add funder address</div>
         <div className={styles.addRow}>
-          <input
-            className={styles.addInputAddr}
-            placeholder="0x… funder address"
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && addAccount()}
-            spellCheck={false}
-            autoComplete="off"
-          />
-          <input
-            className={styles.addInputLabel}
-            placeholder="label (optional)"
-            value={draftLabel}
-            onChange={(e) => setDraftLabel(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && addAccount()}
-            spellCheck={false}
-            autoComplete="off"
-          />
-          <button className={styles.addBtn} onClick={addAccount}>
-            track →
-          </button>
+          <input className={styles.addInputAddr} placeholder="0x… funder address"
+            value={draft} onChange={(e) => setDraft(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && addAccount()} spellCheck={false} autoComplete="off" />
+          <input className={styles.addInputLabel} placeholder="label (optional)"
+            value={draftLabel} onChange={(e) => setDraftLabel(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && addAccount()} spellCheck={false} autoComplete="off" />
+          <button className={styles.addBtn} onClick={addAccount}>track →</button>
         </div>
         <div className={styles.addHint}>
           your funder address is the proxy wallet shown at{' '}
-          <a
-            href="https://polymarket.com/settings"
-            target="_blank"
-            rel="noopener noreferrer"
-            className={styles.link}
-          >
+          <a href="https://polymarket.com/settings" target="_blank" rel="noopener noreferrer" className={styles.link}>
             polymarket.com/settings
-          </a>
-          . addresses are stored only in your browser — never sent anywhere except
-          to query public polymarket data.
+          </a>. addresses are stored only in your browser.
         </div>
       </section>
 
       <footer className={styles.footer}>
         <span className="mono">anzee.xyz</span> ·{' '}
         <span>{accounts.length} account{accounts.length === 1 ? '' : 's'} tracked</span> ·{' '}
-        <span>data via data-api.polymarket.com + polygon rpc</span>
+        {platformVolume24h > 0 && <span>platform 24h vol: {formatUsd(platformVolume24h, { compact: true })}</span>}
       </footer>
     </div>
   );
 }
 
-function Total({
-  label,
-  value,
-  loading,
-  dim,
-  accent,
-  highlight,
-  compact,
-}: {
-  label: string;
-  value: number;
-  loading: boolean;
-  dim?: boolean;
-  accent?: boolean;
-  highlight?: boolean;
-  compact?: boolean;
+// ─── Total bar components ──────────────────────────────────────────────────────
+
+function Total({ label, value, loading, accent, highlight, compact }: {
+  label: string; value: number; loading: boolean; accent?: boolean; highlight?: boolean; compact?: boolean;
 }) {
   return (
     <div className={styles.total}>
       <div className={styles.totalLabel}>{label}</div>
-      <div
-        className={`${styles.totalValue} num`}
-        data-dim={dim ? '' : undefined}
+      <div className={`${styles.totalValue} num`}
         data-accent={accent ? '' : undefined}
-        data-highlight={highlight && value > 0 ? '' : undefined}
-      >
+        data-highlight={highlight && value > 0 ? '' : undefined}>
         {loading && value === 0 ? '—' : formatUsd(value, { compact })}
       </div>
     </div>
   );
 }
 
-function TotalShares({
-  label,
-  value,
-  loading,
-  highlight,
-}: {
-  label: string;
-  value: number;
-  loading: boolean;
-  highlight?: boolean;
-}) {
+function TotalPct({ label, value, loading }: { label: string; value: number | undefined; loading: boolean; }) {
   return (
     <div className={styles.total}>
       <div className={styles.totalLabel}>{label}</div>
-      <div
-        className={`${styles.totalValue} ${styles.totalShares} num`}
-        data-highlight={highlight && value > 0 ? '' : undefined}
-      >
+      <div className={`${styles.totalValue} ${styles.totalPct} num`}
+        data-highlight={value && value > 0 ? '' : undefined}>
+        {loading ? '—' : value === undefined ? '—' : formatPct(value)}
+      </div>
+    </div>
+  );
+}
+
+function TotalShares({ label, value, loading, highlight }: { label: string; value: number; loading: boolean; highlight?: boolean; }) {
+  return (
+    <div className={styles.total}>
+      <div className={styles.totalLabel}>{label}</div>
+      <div className={`${styles.totalValue} ${styles.totalShares} num`}
+        data-highlight={highlight && value > 0 ? '' : undefined}>
         {loading && value === 0 ? '—' : formatShares(value)}
         {!loading && value > 0 && <span className={styles.totalSharesUnit}>sh</span>}
       </div>
@@ -279,53 +209,36 @@ function TotalShares({
   );
 }
 
-/**
- * Aggregate totals by fetching every account in parallel.
- * Each SWR key gets its own cache entry — so the per-row component
- * shares the cache with this hook (no duplicate fetches).
- */
+// ─── Aggregation hook ──────────────────────────────────────────────────────────
+
 function useTotals(addresses: string[], refreshMs: number) {
-  // Stable concatenated key so the hook re-runs only when the list actually changes.
   const key = useMemo(() => addresses.join(','), [addresses]);
 
   const { data, isLoading } = useSWR<AccountSnapshot[]>(
     addresses.length ? ['totals', key] : null,
     async () => {
       const results = await Promise.all(
-        addresses.map((a) =>
-          fetcher(`/api/account/${a}`).catch(() => null as unknown as AccountSnapshot)
-        )
+        addresses.map((a) => fetch(`/api/account/${a}`).then((r) => r.json()).catch(() => null))
       );
       return results.filter(Boolean) as AccountSnapshot[];
     },
-    {
-      refreshInterval: refreshMs,
-      revalidateOnFocus: true,
-      keepPreviousData: true,
-    }
+    { refreshInterval: refreshMs, revalidateOnFocus: true, keepPreviousData: true }
   );
 
   const totals = (data ?? []).reduce(
     (acc, s) => ({
-      totalBalance: acc.totalBalance + s.totalBalance,
-      usdcBalance: acc.usdcBalance + s.usdcBalance,
-      volumeUsdcTotal: acc.volumeUsdcTotal + s.volumeUsdcTotal,
-      volumeUsdc24h: acc.volumeUsdc24h + s.volumeUsdc24h,
+      totalBalance:      acc.totalBalance      + s.totalBalance,
+      volumeUsdcTotal:   acc.volumeUsdcTotal   + s.volumeUsdcTotal,
+      volumeUsdc24h:     acc.volumeUsdc24h     + s.volumeUsdc24h,
+      volumeUsdc1h:      acc.volumeUsdc1h      + s.volumeUsdc1h,
       volumeSharesTotal: acc.volumeSharesTotal + s.volumeSharesTotal,
-      volumeShares24h: acc.volumeShares24h + s.volumeShares24h,
-      rewardsTotal: acc.rewardsTotal + s.rewardsTotal,
-      rewards24h: acc.rewards24h + s.rewards24h,
+      volumeShares24h:   acc.volumeShares24h   + s.volumeShares24h,
+      volumeShares1h:    acc.volumeShares1h    + s.volumeShares1h,
+      rewardsTotal:      acc.rewardsTotal      + s.rewardsTotal,
+      rewards24h:        acc.rewards24h        + s.rewards24h,
     }),
-    {
-      totalBalance: 0,
-      usdcBalance: 0,
-      volumeUsdcTotal: 0,
-      volumeUsdc24h: 0,
-      volumeSharesTotal: 0,
-      volumeShares24h: 0,
-      rewardsTotal: 0,
-      rewards24h: 0,
-    }
+    { totalBalance: 0, volumeUsdcTotal: 0, volumeUsdc24h: 0, volumeUsdc1h: 0,
+      volumeSharesTotal: 0, volumeShares24h: 0, volumeShares1h: 0, rewardsTotal: 0, rewards24h: 0 }
   );
 
   return { totals, isLoading };

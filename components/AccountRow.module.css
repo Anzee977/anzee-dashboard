@@ -1,7 +1,7 @@
 /* ── Desktop layout ─────────────────────────────────────────── */
 .row {
   display: grid;
-  grid-template-columns: minmax(180px, 1.2fr) repeat(7, minmax(95px, 1fr)) 120px;
+  grid-template-columns: minmax(160px, 1.1fr) repeat(9, minmax(85px, 1fr)) 110px;
   align-items: center;
   gap: 10px;
   padding: 14px 20px;
@@ -70,6 +70,15 @@
   font-size: 9px; color: var(--text-faint);
   text-transform: uppercase; letter-spacing: .06em;
 }
+
+.pctCell {
+  color: #a78bfa; /* violet, distinct from green $ and teal rewards */
+}
+.pctCell[data-highlight] {
+  color: #c4b5fd;
+  font-weight: 500;
+}
+.pctCell[data-zero] { color: var(--text-faint); }
 
 .skeleton { color: var(--text-faint); opacity: .5; }
 

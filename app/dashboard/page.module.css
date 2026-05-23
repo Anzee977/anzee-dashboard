@@ -169,6 +169,13 @@
   letter-spacing: 0.06em;
 }
 
+.totalPct { color: #a78bfa; }
+.totalPct[data-highlight] {
+  color: #c4b5fd;
+  text-shadow: 0 0 12px rgba(196, 181, 253, 0.3);
+  font-weight: 500;
+}
+
 /* Table */
 .table {
   border: 1px solid var(--border);
@@ -179,8 +186,8 @@
 
 .tableHeader {
   display: grid;
-  grid-template-columns: minmax(180px, 1.2fr) repeat(7, minmax(95px, 1fr)) 120px;
-  gap: 10px;
+  grid-template-columns: minmax(160px, 1.1fr) repeat(9, minmax(85px, 1fr)) 110px;
+  gap: 8px;
   padding: 12px 20px;
   background: var(--bg-elevated);
   border-bottom: 1px solid var(--border-strong);
