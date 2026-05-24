@@ -1,7 +1,7 @@
 /* ── Desktop layout ─────────────────────────────────────────── */
 .row {
   display: grid;
-  grid-template-columns: minmax(160px, 1.1fr) repeat(9, minmax(85px, 1fr)) 110px;
+  grid-template-columns: minmax(160px, 1.1fr) repeat(10, minmax(80px, 1fr)) 110px;
   align-items: center;
   gap: 10px;
   padding: 14px 20px;

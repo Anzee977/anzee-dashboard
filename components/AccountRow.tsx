@@ -65,6 +65,7 @@ export default function AccountRow({ address, label, onRemove, onRename, refresh
       <UsdCell  label="vol $ · all-time" value={data?.volumeUsdcTotal}   loading={isLoading && !data} compact />
       <UsdCell  label="vol $ · 24h"      value={data?.volumeUsdc24h}     loading={isLoading && !data} highlight={data && data.volumeUsdc24h > 0} />
       <UsdCell  label="vol $ · 1h"       value={data?.volumeUsdc1h}      loading={isLoading && !data} highlight={data && data.volumeUsdc1h > 0} />
+      <SharesCell label="vol sh · all-time" value={data?.volumeSharesTotal} loading={isLoading && !data} />
       <SharesCell label="vol sh · 24h"   value={data?.volumeShares24h}   loading={isLoading && !data} highlight={data && data.volumeShares24h > 0} />
       <SharesCell label="vol sh · 1h"    value={data?.volumeShares1h}    loading={isLoading && !data} highlight={data && data.volumeShares1h > 0} />
       <PctCell  label="mkt share 24h"    value={marketShare}             loading={isLoading && !data} />

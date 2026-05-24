@@ -95,13 +95,16 @@ export default function DashboardPage() {
       </header>
 
       <section className={styles.totalsBar}>
-        <Total label="total balance"       value={totals.totalBalance}    loading={isLoading} />
-        <Total label="vol $ · all-time"    value={totals.volumeUsdcTotal} loading={isLoading} compact />
-        <Total label="vol $ · 24h"         value={totals.volumeUsdc24h}   loading={isLoading} highlight />
-        <Total label="vol $ · 1h"          value={totals.volumeUsdc1h}    loading={isLoading} highlight />
-        <TotalPct label="mkt share · 24h"  value={combinedMarketShare}    loading={isLoading} />
-        <Total label="lp rewards · all"    value={totals.rewardsTotal}    loading={isLoading} accent />
-        <Total label="lp rewards · 24h"    value={totals.rewards24h}      loading={isLoading} accent highlight />
+        <Total label="total balance"       value={totals.totalBalance}      loading={isLoading} />
+        <Total label="vol $ · all-time"    value={totals.volumeUsdcTotal}   loading={isLoading} compact />
+        <Total label="vol $ · 24h"         value={totals.volumeUsdc24h}     loading={isLoading} highlight />
+        <Total label="vol $ · 1h"          value={totals.volumeUsdc1h}      loading={isLoading} highlight />
+        <TotalShares label="vol sh · all"  value={totals.volumeSharesTotal} loading={isLoading} />
+        <TotalShares label="vol sh · 24h"  value={totals.volumeShares24h}   loading={isLoading} highlight />
+        <TotalShares label="vol sh · 1h"   value={totals.volumeShares1h}    loading={isLoading} highlight />
+        <TotalPct label="mkt share · 24h"  value={combinedMarketShare}      loading={isLoading} />
+        <Total label="lp rewards · all"    value={totals.rewardsTotal}      loading={isLoading} accent />
+        <Total label="lp rewards · 24h"    value={totals.rewards24h}        loading={isLoading} accent highlight />
       </section>
 
       <section className={styles.table}>
@@ -111,6 +114,7 @@ export default function DashboardPage() {
           <div className={styles.rightAlign}>vol $ · all</div>
           <div className={styles.rightAlign}>vol $ · 24h</div>
           <div className={styles.rightAlign}>vol $ · 1h</div>
+          <div className={styles.rightAlign}>vol sh · all</div>
           <div className={styles.rightAlign}>vol sh · 24h</div>
           <div className={styles.rightAlign}>vol sh · 1h</div>
           <div className={styles.rightAlign}>mkt share</div>
